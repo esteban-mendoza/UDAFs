@@ -35,6 +35,7 @@ object CustomAverage extends Aggregator[Int, Average, Double] {
 
   /*
     Documentation of Encoders available in:
+    https://spark.apache.org/docs/latest/api/scala/org/apache/spark/sql/Dataset.html
     https://spark.apache.org/docs/latest/api/scala/org/apache/spark/sql/Encoders$.html
    */
 
