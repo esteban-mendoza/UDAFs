@@ -33,6 +33,11 @@ object CustomAverage extends Aggregator[Int, Average, Double] {
   // Transform the output of the reduction
   override def finish(reduction: Average): Double = reduction.sum.toDouble / reduction.count.toDouble
 
+  /*
+    Documentation of Encoders available in:
+    https://spark.apache.org/docs/latest/api/scala/org/apache/spark/sql/Encoders$.html
+   */
+
   // The Encoder for the intermediate value type
   override def bufferEncoder: Encoder[Average] = Encoders.product
 

@@ -1,8 +1,10 @@
 package com.bbva.datiocoursework
 
-import com.bbva.datiocoursework.utils._
+import utils._
+
 import org.apache.log4j._
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{Column, SparkSession}
+import org.apache.spark.sql.expressions.{Window, WindowSpec}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
 
@@ -46,7 +48,7 @@ object Example {
       .csv("src/test/resources/data/csv/Pokemon.csv")
       .as[Pokemon]
 
-    // Use CustomAverage UDAF
+    // Use UDAF over RelationalGroupedDataset
     val customAvg = udaf(CustomAverage)
     val x = dataset
       .groupBy(col("generation"))
@@ -55,9 +57,22 @@ object Example {
         customAvg(col("defense")).alias("avgDefense")
       )
 
+    // Use UDAF with WindowSpec
+    val window: WindowSpec = Window.partitionBy(dataset("generation"))
+    val avgAttack: Column = customAvg(dataset("attack"))
+      .over(window)
+      .alias("avgAttack")
+
+    val y = dataset.select(
+      dataset.columns.map(col) :+ avgAttack: _*
+    )
+
     // Show results
     x.printSchema
     x.show
+
+    y.printSchema
+    y.show
 
     // Stop spark session
     spark.stop()
