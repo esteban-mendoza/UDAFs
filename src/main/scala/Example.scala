@@ -48,8 +48,11 @@ object Example {
       .csv("src/test/resources/data/csv/Pokemon.csv")
       .as[Pokemon]
 
-    // Use UDAF over RelationalGroupedDataset
+    // Declare UDAFs
     val customAvg = udaf(CustomAverage)
+    val customCorr = udaf(Correlation)
+
+    // Use UDAF over RelationalGroupedDataset
     val x = dataset
       .groupBy(col("generation"))
       .agg(
@@ -59,12 +62,30 @@ object Example {
 
     // Use UDAF with WindowSpec
     val window: WindowSpec = Window.partitionBy(dataset("generation"))
+
     val avgAttack: Column = customAvg(dataset("attack"))
       .over(window)
       .alias("avgAttack")
+    val avgDefense: Column = customAvg(dataset("defense"))
+      .over(window)
+      .alias("avgDefense")
 
     val y = dataset.select(
-      dataset.columns.map(col) :+ avgAttack: _*
+      dataset.columns.map(col) :+ avgAttack :+ avgDefense: _*
+    )
+
+    // Calculate correlation between attack and defense
+    val rAttackDefense: Column = customCorr(y("attack"), y("avgAttack"), y("defense"), y("avgDefense"))
+      .over(window)
+      .alias("rAttackDefense")
+
+    val z = y.groupBy(col("generation"))
+      .agg(
+        customCorr(y("attack"), y("avgAttack"), y("defense"), y("avgDefense")).alias("rAttackDefense")
+      )
+
+    val w = y.select(
+      y.columns.map(col) :+ rAttackDefense: _*
     )
 
     // Show results
@@ -73,6 +94,12 @@ object Example {
 
     y.printSchema
     y.show
+
+    z.printSchema
+    z.show
+
+    w.printSchema
+    w.show
 
     // Stop spark session
     spark.stop()
