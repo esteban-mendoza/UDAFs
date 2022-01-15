@@ -6,6 +6,8 @@ import org.apache.spark.sql.expressions.Aggregator
 
 case class Average(var sum: Long, var count: Long)
 
+// User Defined Aggregate Functions
+// User Defined Functions
 /*
   See documentation at:
   https://spark.apache.org/docs/latest/api/scala/org/apache/spark/sql/expressions/Aggregator.html

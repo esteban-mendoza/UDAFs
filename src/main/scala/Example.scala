@@ -3,6 +3,7 @@ package com.bbva.datiocoursework
 import utils._
 
 import org.apache.log4j._
+
 import org.apache.spark.sql.{Column, SparkSession}
 import org.apache.spark.sql.expressions.{Window, WindowSpec}
 import org.apache.spark.sql.functions._
@@ -20,6 +21,9 @@ object Example {
       .appName("CustomAverage")
       .config("spark.master", "local[*]")
       .getOrCreate()
+
+    // DataFrame = Dataset[Row]
+    // Dataset[Pokemon]
 
     // Create schema
     val pokemonSchema = new StructType()
@@ -43,7 +47,7 @@ object Example {
     // Load data
     val dataset = spark
       .read
-      .schema(pokemonSchema)
+      .schema(pokemonSchema) // .option("inferSchema", "true")
       .option("header", "true")
       .csv("src/test/resources/data/csv/Pokemon.csv")
       .as[Pokemon]
@@ -51,6 +55,18 @@ object Example {
     // Declare UDAFs
     val customAvg = udaf(CustomAverage)
     val customCorr = udaf(Correlation)
+
+    // Declare UDFs
+    val duplicateName = udf(
+      (name: String) => name.concat(name)
+    )
+
+    // Use UDF
+    val duplicatedNames: Column = duplicateName(dataset("name"))
+
+    dataset.select(
+      dataset.columns.map(col) :+ duplicatedNames: _*
+    ).show
 
     // Use UDAF over RelationalGroupedDataset
     val x = dataset
@@ -66,6 +82,7 @@ object Example {
     val avgAttack: Column = customAvg(dataset("attack"))
       .over(window)
       .alias("avgAttack")
+
     val avgDefense: Column = customAvg(dataset("defense"))
       .over(window)
       .alias("avgDefense")
@@ -95,11 +112,9 @@ object Example {
     y.printSchema
     y.show
 
-    z.printSchema
-    z.show
-
-    w.printSchema
-    w.show
+    // Joins
+    val joins = new Joins(spark)
+    joins.run()
 
     // Stop spark session
     spark.stop()
